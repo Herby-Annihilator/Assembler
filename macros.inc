@@ -28,7 +28,7 @@ CreateQuadroMatrix macro memorySize, memorySize4
 	mov eax,ebx			
 endm
 
-AskUserToInputData macro message
+SendMessageToUser macro message
 	invoke WriteConsoleA,			; переводим строку в консоли
                       hConsoleOutput,	; хэндл вывода
                         ADDR msg1310,	; адрес строки msg1310
@@ -55,7 +55,7 @@ endm
 FillMatrix macro matrixAdress, matrixSize, elementSize, message1, message2, whereToReadData
 	local firstFor
 	local secondFor
-	AskUserToInputData message1
+	SendMessageToUser message1
 	mov ecx, matrixSize
 	firstFor:
 		mov eax, matrixSize   ; число элементов в строке матрицы
@@ -133,3 +133,12 @@ CalculateStrIndexesSum macro matrixAdress, matrixSize, elementSize, futureSum, s
 	loop cycle
 endm
 
+DefineMatrixSize macro futureSize
+	invoke ReadConsole, hConsoleInput, ADDR whereToReadData, SIZEOF whereToReadData, ADDR NumberOfCharsRead, 0
+	lea ebx, [whereToReadData]        ;удаление символов
+	add ebx, [NumberOfCharsRead]        ;перевода строки
+	sub ebx, 2                        ;из буфера ввода
+	mov [ebx], word ptr 0
+	invoke  atodw, ADDR whereToReadData   ; преобразуем строку в число, результат в eax
+	mov futureSize, eax
+endm
