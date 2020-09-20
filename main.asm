@@ -8,10 +8,13 @@ include C:\masm32\include\windows.inc	; STD_INPUT_HANDLE,
 
 include <C:\masm32\include\kernel32.inc>
 include <C:\masm32\include\user32.inc>
+include <C:\masm32\include\masm32.inc>
 include <macros.inc>
 
-includelib <C:\masm32\include\kernel32.lib>
-includelib <C:\masm32\include\user32.lib>
+includelib <C:\masm32\lib\kernel32.lib>
+includelib <C:\masm32\lib\user32.lib>
+includelib <C:\masm32\lib\masm32.lib>
+;include <C:\masm32\macros\macros.asm>
 
 
 
@@ -20,64 +23,82 @@ includelib <C:\masm32\include\user32.lib>
     hConsoleInput DWORD ?			; переменные для хранения хэндлов ввода
     hConsoleOutput DWORD ?			; и вавода
 
-    Buffer byte 128 dup (?)			; для вода с клавиатуры 1 символа,
+    whereToReadData byte 128 dup (?)			; для вода с клавиатуры
 
     NumberOfCharsRead DWORD ?		; переменные для записи числа фактически
     NumberOfCharsWritten DWORD ?		; введенных и выведенных символов
 					
 
-    msg1 byte " Hello, World!"		; строковая переменная
-
-    msg2 byte " Нажмите Enter, чтобы выйти...", 0	; заканчивается нулем,
-						    ; так как она будет передана
-						    ; API-функции CharToOem
-
     msg1310 byte 13, 10			; перевод строки
+    message1 byte "Lets fill first matrix", 0
+    message2 byte "Input number ", 0
 
-    firstMatrix dword ?
+    firstMatrixAdress dword ?
     secondMatrix dword ?
-    n dword ?
+    memorySize4 dword ?
+    firstMatrixStrIndexesSum dword ?
+
+    matrixSize dword 3
+    elementSize dword 4
+
+    strAdress dword ?
 
 
 .code					; сегмент кода
-start:
 
-    mov eax,5
-    mov n,eax
-    CreateQuadroMatrix n
-    mov firstMatrix,eax
+
+IsThisStrIncreasingSequence proc
+	push ebp
+	mov ebp, esp
+
+	mov eax, [ebp + 0ch]   ; загрузить в регистр число элементов в строке
+	cmp eax, 1    ; elementsCount
+	jz false
+
+	mov ebx, [ebp + 10h]   ; достать адрес начала строки
+	mov edi, [ebx]  ; в edi первый элемент строки
+
+	mov ecx, [ebp + 0ch]  ; положить в регистр число элементов в строке
+	dec ecx  ; уменьшить это число на 1, т.к. сравнивать будем, начиная со второго числа
+	cycle:
+		mov eax, [ebp + 0ch]   ; вычисляем индекс элемента
+		sub eax, ecx           ; в строке
+		mov ebx, [ebp + 8]     ; в ebx размер нашего элемента в байтах
+		imul ebx
+		mov ebx, [ebp + 10h]   ; в ebx адрес начала строки
+		add eax, ebx ; в eax адрес слова
+		cmp [eax], edi
+		jle false    ; если число по адресу в eax меньше или равно числу в edi
+		mov edi, [eax]
+	loop cycle
+	mov eax, 1
+	jmp exit
+	false: mov eax, 0
+	exit:
+	pop ebp
+	ret 0ch
+IsThisStrIncreasingSequence endp
+
+
+
+start:
 
     invoke AllocConsole			; запрашиваем у Windows консоль
 
     invoke GetStdHandle, STD_INPUT_HANDLE	; получаем хэндл консоли для ввода
-    mov hConsoleInput, EAX			; записываем хэндл в переменную
+    mov hConsoleInput, eax			; записываем хэндл в переменную
 
     invoke GetStdHandle, STD_OUTPUT_HANDLE	; получаем хэндл консоли для вывода
-    mov hConsoleOutput, EAX			; записываем хэндл в переменную
+    mov hConsoleOutput, eax			; записываем хэндл в переменную
 
+    CreateQuadroMatrix 3, memorySize4
+	mov firstMatrixAdress, eax
+    
+    FillMatrix firstMatrixAdress, 3, 4, message1, message2, whereToReadData
 
-    AskUserToInputData msg1,msg1310,hConsoleOutput,NumberOfCharsWritten
+    CalculateStrIndexesSum firstMatrixAdress, 3, 4, firstMatrixStrIndexesSum, strAdress
 
-                                                                    ;invoke CharToOem, ADDR msg2, ADDR msg2	; перекодируем Win1251 -> DOS
-
-
-
-    invoke WriteConsoleA,			; пишем " Нажмите Enter, чтобы выйти..."
-                          hConsoleOutput,
-                               ADDR msg2,
-                       (SIZEOF msg2) - 1,	; уменьшаем размер строки msg2 на 1 (из-за нуля)
-               ADDR NumberOfCharsWritten,
-                                       0
-
-
-
-    invoke ReadConsoleA,			; ожидаем ввода в консоль
-                          hConsoleInput,	; хэндл ввода
-                            ADDR Buffer,	; адрес буфера
-                                      1,	; вводим 1 символ
-                 ADDR NumberOfCharsRead,	; сюда функция запишет число символов
-                                      0	; lpReserved передаем, как ноль
-
+    mov eax, firstMatrixStrIndexesSum
 
 
     invoke ExitProcess, 0			; сообщаем системе, что программа окончена

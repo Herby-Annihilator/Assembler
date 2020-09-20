@@ -1,4 +1,5 @@
 CreateQuadroMatrix macro memorySize, memorySize4
+	local cycle
 	invoke GetProcessHeap  ; получаем адрес кучи нашего процесса
 	mov edi,eax
 	mov eax, memorySize
@@ -27,12 +28,6 @@ CreateQuadroMatrix macro memorySize, memorySize4
 	mov eax,ebx			
 endm
 
-
-IsThisStrIncreasingSequence macro adress, strLenght    ; тут ошибки
-	
-endm
-
-
 AskUserToInputData macro message
 	invoke WriteConsoleA,			; переводим строку в консоли
                       hConsoleOutput,	; хэндл вывода
@@ -56,12 +51,10 @@ AskUserToInputData macro message
                                    0
 endm
 
-ReadData macro variableWhereToRead
-	
-endm
-
 
 FillMatrix macro matrixAdress, matrixSize, elementSize, message1, message2, whereToReadData
+	local firstFor
+	local secondFor
 	AskUserToInputData message1
 	mov ecx, matrixSize
 	firstFor:
@@ -69,7 +62,7 @@ FillMatrix macro matrixAdress, matrixSize, elementSize, message1, message2, wher
 		sub eax, ecx
 		mov ebx, elementSize
 		imul ebx   ; в eax относительный адрес нужного указателя
-		mov edi, ebx
+		mov edi, eax
 		push ecx
 		mov ecx, matrixSize
 		secondFor:           ; на данном моменте заняты регистры: ecx, edi - относительный адрес нужного указателя
@@ -105,3 +98,38 @@ FillMatrix macro matrixAdress, matrixSize, elementSize, message1, message2, wher
 		dec ecx
 	jnz firstFor		; потому что loop не может допрыгнуть
 endm
+
+
+CalculateStrIndexesSum macro matrixAdress, matrixSize, elementSize, futureSum, strAdress  ; strAdress - просто пустая переменная, нужна для работы макроса
+	local cycle, next
+	mov eax, 0
+	mov futureSum, eax
+	mov ecx, matrixSize
+	cycle:
+		mov eax, matrixSize
+		sub eax, ecx
+		mov ebx, elementSize
+		imul ebx
+		mov ebx, matrixAdress
+		add eax, ebx  ; в eax адрес указателя на одномерный массив
+		mov eax, [eax]
+		mov strAdress, eax
+		push ecx
+		push strAdress
+		push matrixSize
+		push elementSize
+		call IsThisStrIncreasingSequence
+		pop ecx
+		cmp eax, 0   ; значит, что строка не содержит возрастающую последовательность
+		jz next
+		
+		mov eax, matrixSize  ; иначе, добавляем номер текущей строки в общую сумму
+		sub eax, ecx
+		mov ebx, futureSum
+		add ebx, eax
+		mov futureSum, ebx
+
+		next: 
+	loop cycle
+endm
+

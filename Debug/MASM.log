@@ -1,7 +1,2 @@
 ﻿  Assembling main.asm...
-main.asm(48): error A2026: constant expected
-main.asm(48): error A2114: INVOKE argument type mismatch : argument : 3
-main.asm(48): error A2026: constant expected
-main.asm(48): error A2114: INVOKE argument type mismatch : argument : 3
-main.asm(48): error A2001: immediate operand not allowed
-C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\BuildCustomizations\masm.targets(70,5): error MSB3721: выход из команды "ml.exe /c /nologo /Zi /Fo"Debug\main.obj" /W3 /errorReport:prompt  /Tamain.asm" с кодом "1".
+  MASM.vcxproj -> D:\Проекты  в студии\MASM\Debug\MASM.exe
